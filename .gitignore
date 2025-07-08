@@ -134,3 +134,4 @@ _deps
 /cmake-build-debug/.cmake/api/v1/query/toolchains-v1
 /.idea/vcs.xml
 /.idea/codeStyles/codeStyleConfig.xml
+/.idea/KernelModules.iml
