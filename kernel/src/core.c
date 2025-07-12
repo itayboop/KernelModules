@@ -1,8 +1,9 @@
-#include <linux/module.h>
-#include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+
+#include <linux/module.h>
+#include <linux/kernel.h>
 
 #define PROC_ENTRY_NAME ("hello_proc")
 static struct proc_dir_entry *proc_entry = NULL;
