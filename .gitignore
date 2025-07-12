@@ -8,7 +8,8 @@
 *.obj
 *.elf
 
-build/*
+*build/*
+usermode/build/*
 
 # Linker output
 *.ilk
@@ -135,3 +136,4 @@ _deps
 /.idea/vcs.xml
 /.idea/codeStyles/codeStyleConfig.xml
 /.idea/KernelModules.iml
+
