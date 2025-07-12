@@ -2,6 +2,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/proc_fs.h>
+#include <linux/seq_file.h>
 
 #define PROC_ENTRY_NAME ("hello_proc")
 static struct proc_dir_entry *proc_entry = NULL;
@@ -19,18 +20,24 @@ static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offs
 }
 
 static ssize_t proc_write(struct file *file, const char* buf, size_t count, loff_t *ppos) {
+    ssize_t ret = -1;
     char kbuf[128] = {};
 
     if (count > sizeof(kbuf) - 1)
-        return -EINVAL;
+        ret = -EINVAL;
+        goto cleanup;
 
     if (copy_from_user(kbuf, buf, count))
-        return -EFAULT;
+        ret = -EFAULT;
+        goto cleanup;
 
     kbuf[count] = '\0';
     printk(KERN_INFO "proc_write received: %s\n", kbuf);
 
-    return count;
+    ret = count; // Return the number of bytes written
+
+cleanup:
+    return ret;
 }
 
 static struct proc_ops fops = {
@@ -38,16 +45,30 @@ static struct proc_ops fops = {
     .proc_write = proc_write,
 };
 
+static int core_proc_show(struct seq_file *m, void *v)
+{
+    static const char *msg = "Hello from the kernel!\n";
+	seq_puts(m, msg);
+	seq_putc(m, '\n');
+	return 0;
+}
+
+
 static int __init init_entry(void) {
+    int ret = -1;
     printk(KERN_INFO "core inited!\n");
-    proc_entry = proc_create(PROC_ENTRY_NAME, 0666, NULL, &fops);
+    proc_entry = proc_create_single(PROC_ENTRY_NAME, 0666, NULL, core_proc_show);
     if (proc_entry == NULL) {
         printk(KERN_ERR "Failed to create proc entry: %s\n", PROC_ENTRY_NAME);
-        return -ENOMEM;
+        ret = -ENOMEM;
+        goto cleanup;
     }
     printk(KERN_INFO "Proc entry created successfully.\n");
 
-    return 0;
+    ret = 0;
+
+cleanup:
+    return ret;
 }
 
 static void __exit exit_entry(void) {
