@@ -1,39 +1,53 @@
 #include <linux/slab.h>
-#include "core_modules.h"
+#include <linux/init.h>
+#include <linux/proc_fs.h>
+#include <linux/seq_file.h>
+#include <linux/string.h>
+
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include "../kernel/src/core_module.h"
 
 plugin_ops_t* ops;
+extern int register_plugin(struct plugin_ops_s* ops);
 
 static int start_my_plugin(void) {
     printk(KERN_INFO "starting dummy plugin\n");
+
+    return 0;
 }
 
 static int stop_my_plugin(void) {
     printk(KERN_INFO "stopping dummy plugin\n");
+
+    return 0;
 }
 
-void __init dummy_plugin_init(void) {
+static int __init init_entry(void) {
     printk(KERN_INFO "loading dummy plugin\n");
 
-    ops = kmalloc(sizeof(struct plugin_ops));
+    ops = kmalloc(sizeof(plugin_ops_t), GFP_KERNEL);
     if(!ops) {
         printk(KERN_ERR "failed to allocate memory for plugin_ops.\n");
-        return;
+        return -ENOMEM;
     }
     ops->name = "dummy_plugin";
     ops->start = start_my_plugin;
     ops->stop = stop_my_plugin;
 
     register_plugin(ops);
+
+    return 0;
 }
 
-void __exit dummy_plugin_exit(void) {
+static void __exit exit_entry(void) {
     printk(KERN_INFO "unloading dummy plugin\n");
 
     kfree(ops);
 }
 
-module_init(dummy_plugin_init);
-module_exit(dummy_plugin_exit);
+module_init(init_entry);
+module_exit(exit_entry);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("ReiN & Hadad");

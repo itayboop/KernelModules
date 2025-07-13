@@ -13,7 +13,7 @@
 #define NUM_PLUGINS (10)
 #define PROC_ENTRY_NAME ("core_module")
 
-static struct plugin_ops* g_plugins[NUM_PLUGINS] = {};
+static struct plugin_ops_s* g_plugins[NUM_PLUGINS] = {};
 static struct proc_dir_entry* g_core_proc_entry = NULL;
 
 
@@ -108,7 +108,8 @@ static int core_proc_show(struct seq_file *m, void *v)
 	return 0;
 }
 
-int register_plugin(struct plugin_ops* ops) {
+EXPORT_SYMBOL(register_plugin);
+int register_plugin(struct plugin_ops_s* ops) {
     int ret = -1;
     static size_t current_plugin_count = 0;
     ASSERT(ops != NULL, -EINVAL);
