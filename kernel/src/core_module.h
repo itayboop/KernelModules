@@ -3,12 +3,12 @@
 
 #include <linux/proc_fs.h>
 
-struct plugin_ops {
+typedef struct plugin_ops_s {
     const char* name;
     int (*start)(void);
     int (*stop)(void);
     struct proc_dir_entry* plugin_entry;
-};
+} plugin_ops_t;
 
 typedef enum plugin_commands_e {
     PLUGIN_START,
@@ -16,6 +16,6 @@ typedef enum plugin_commands_e {
     PLUGIN_STATUS,
 } plugin_commands_t;
 
-int register_plugin(struct plugin_ops* ops);
+int register_plugin(plugin_ops_t* ops);
 
 #endif // __CORE_MODULE_H__
