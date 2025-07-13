@@ -5,7 +5,7 @@ CONFIG_MODULE_SIG=n
 # CURDIR resolves the cwd after the Makefile is executed.
 PWD := $(CURDIR)
 
-obj-m += src/core.o
+obj-m += src/core_module.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules

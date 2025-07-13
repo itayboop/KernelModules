@@ -7,6 +7,8 @@
 
 #define PROC_ENTRY_NAME ("hello_proc")
 static struct proc_dir_entry *proc_entry = NULL;
+#define NUM_PLUGINS (10)
+static struct plugin_ops* g_plugins[NUM_PLUGINS] = {};
 
 static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset) {
     static const char *msg = "Hello from the kernel!\n";
@@ -41,11 +43,6 @@ cleanup:
     return ret;
 }
 
-static struct proc_ops fops = {
-    .proc_read = proc_read,
-    .proc_write = proc_write,
-};
-
 static int core_proc_show(struct seq_file *m, void *v)
 {
     static const char *msg = "Hello from the kernel!\n";
@@ -54,6 +51,33 @@ static int core_proc_show(struct seq_file *m, void *v)
 	return 0;
 }
 
+int register_plugin(struct plugin_ops* ops) {
+    static size_t current_plugin_count = 0;
+    if (ops == NULL) {
+        printk(KERN_ERR "plugin_register: ops is NULL\n");
+        return -EINVAL;
+    }
+
+    g_plugins[current_plugin_count++] = ops;
+    if (current_plugin_count >= NUM_PLUGINS) {
+        printk(KERN_ERR "plugin_register: Maximum plugin count reached\n");
+        return -ENOMEM;
+    }
+    printk(KERN_INFO "plugin_register called with ops: %p\n", ops);
+    // Here you would typically register the plugin operations
+    return 0;
+}
+
+int start_plugin(const char* name) {
+    for (size_t i = 0; i < NUM_PLUGINS; i++) {
+        if (g_plugins[i] && strcmp(g_plugins[i]->name, name) == 0) {
+            printk(KERN_INFO "Starting plugin: %s\n", name);
+            return g_plugins[i]->start();
+        }
+    }
+    printk(KERN_ERR "Plugin %s not found\n", name);
+    return -ENOENT;
+}
 
 static int __init init_entry(void) {
     int ret = -1;
