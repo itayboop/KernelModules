@@ -1,7 +1,8 @@
+#include "core_modules.h"
 #include <linux/slab.h>
 #include "core_modules.h"
 
-struct plugin_ops_t* ops;
+plugin_ops_t* ops;
 
 static int start_my_plugin(void) {
     printk(KERN_INFO "starting dummy plugin\n");
