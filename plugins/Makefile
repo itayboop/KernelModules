@@ -1,14 +1,10 @@
-# CONFIG_MODULE_SIG disabled the module signature verfication.
-# This is useful for development purposes, but should be enabled for production.
-CONFIG_MODULE_SIG=n
-
-# CURDIR resolves the cwd after the Makefile is executed.
-PWD := $(CURDIR)
-
 obj-m += dummy_plugin.o
 
+# Path to your core build Module.symvers
+EXTRA_SYMBOLS := ../kernel/src/Module.symvers
+
 all:
-	make -C /lib/modules/$(shell uname -r)+/build M=$(PWD) modules
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) EXTRA_SYMBOLS=$(EXTRA_SYMBOLS) modules
 
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
