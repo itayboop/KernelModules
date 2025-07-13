@@ -1,72 +1,21 @@
 #include <linux/init.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/string.h>
 
 #include <linux/module.h>
 #include <linux/kernel.h>
 
-#define PROC_ENTRY_NAME ("hello_proc")
-static struct proc_dir_entry *proc_entry = NULL;
+#include "core_module.h"
+#include "common.h"
+
+#define BUFFER_SIZE (1024)
 #define NUM_PLUGINS (10)
+#define PROC_ENTRY_NAME ("core_module")
+
 static struct plugin_ops* g_plugins[NUM_PLUGINS] = {};
+static struct proc_dir_entry* g_core_proc_entry = NULL;
 
-static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset) {
-    static const char *msg = "Hello from the kernel!\n";
-    size_t len = strlen(msg);
-    if (len > 0) {
-        if (copy_to_user(buf, msg, len)) {
-            return -EFAULT;
-        }
-        return len;
-    }
-    return 0; // EOF
-}
-
-static ssize_t proc_write(struct file *file, const char* buf, size_t count, loff_t *ppos) {
-    ssize_t ret = -1;
-    char kbuf[128] = {};
-
-    if (count > sizeof(kbuf) - 1)
-        ret = -EINVAL;
-        goto cleanup;
-
-    if (copy_from_user(kbuf, buf, count))
-        ret = -EFAULT;
-        goto cleanup;
-
-    kbuf[count] = '\0';
-    printk(KERN_INFO "proc_write received: %s\n", kbuf);
-
-    ret = count; // Return the number of bytes written
-
-cleanup:
-    return ret;
-}
-
-static int core_proc_show(struct seq_file *m, void *v)
-{
-    static const char *msg = "Hello from the kernel!\n";
-	seq_puts(m, msg);
-	seq_putc(m, '\n');
-	return 0;
-}
-
-int register_plugin(struct plugin_ops* ops) {
-    static size_t current_plugin_count = 0;
-    if (ops == NULL) {
-        printk(KERN_ERR "plugin_register: ops is NULL\n");
-        return -EINVAL;
-    }
-
-    g_plugins[current_plugin_count++] = ops;
-    if (current_plugin_count >= NUM_PLUGINS) {
-        printk(KERN_ERR "plugin_register: Maximum plugin count reached\n");
-        return -ENOMEM;
-    }
-    printk(KERN_INFO "plugin_register called with ops: %p\n", ops);
-    // Here you would typically register the plugin operations
-    return 0;
-}
 
 int start_plugin(const char* name) {
     for (size_t i = 0; i < NUM_PLUGINS; i++) {
@@ -79,16 +28,110 @@ int start_plugin(const char* name) {
     return -ENOENT;
 }
 
+static int str_to_int(const char* str) {
+    int value = 0;
+    while (*str) {
+        if (*str < '0' || *str > '9') {
+            return -EINVAL; // Invalid character
+        }
+        value = value * 10 + (*str - '0');
+        str++;
+    }
+    return value;
+}
+
+static int callback(unsigned int id, const char* data, size_t size) {
+    printk(KERN_INFO "Callback called with id: %u, data: %s, size: %zu\n", id, data, size);
+    plugin_commands_t command = str_to_int(data);
+    switch(command) {
+        case PLUGIN_START:
+            return start_plugin("dummy_plugin");
+        case PLUGIN_STOP:
+            // Implement stop logic if needed
+            printk(KERN_INFO "Stopping plugin with id: %u\n", id);
+            return 0; // Return 0 on success
+        case PLUGIN_STATUS:
+            // Implement status logic if needed
+            printk(KERN_INFO "Status request for plugin with id: %u\n", id);
+            return 0; // Return 0 on success
+        default:
+            printk(KERN_ERR "Unknown command: %c\n", data[0]);
+            return -EINVAL; // Return error for unknown command
+    }
+    return 0; // Return 0 on success
+}
+
+static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset) {
+    printk(KERN_INFO "proc_read called with size: %zu\n", size);
+    static const char *msg = "Hello from the kernel!\n";
+    size_t len = strlen(msg);
+    if (len > 0) {
+        if (copy_to_user(buf, msg, len)) {
+            return -EFAULT;
+        }
+        return len;
+    }
+    return 0; // EOF
+}
+
+static ssize_t proc_write(struct file *file, const char* user_buffer, size_t count, loff_t *ppos) {
+    printk(KERN_INFO "proc_write called with count: %zu\n", count);
+    unsigned int id = pde_data(file_inode(file));
+    ssize_t ret = -1;
+    char* kbuf = kmalloc(BUFFER_SIZE, GFP_KERNEL); 
+
+    ASSERT(count < sizeof(kbuf), -EINVAL);
+
+    ASSERT(copy_from_user(kbuf, user_buffer, count) == 0, -EFAULT);
+
+    kbuf[count] = '\0';
+    printk(KERN_INFO "proc_write received: %s\n", kbuf);
+
+    ASSERT(callback(id, kbuf, count) != -1, -EFAULT);
+
+    ret = count;
+
+cleanup:
+    return ret;
+}
+
+struct proc_ops g_pops = {
+    .proc_read = proc_read,
+    .proc_write = proc_write,
+};
+
+static int core_proc_show(struct seq_file *m, void *v)
+{
+    static const char *msg = "Hello from the kernel!\n";
+	seq_puts(m, msg);
+	seq_putc(m, '\n');
+	return 0;
+}
+
+int register_plugin(struct plugin_ops* ops) {
+    int ret = -1;
+    static size_t current_plugin_count = 0;
+    ASSERT(ops != NULL, -EINVAL);
+
+    g_plugins[current_plugin_count++] = ops;
+    ASSERT(current_plugin_count <= NUM_PLUGINS, -ENOMEM);
+    printk(KERN_INFO "plugin_register called with ops: %p\n", ops);
+
+    ops->plugin_entry = proc_create(ops->name, 0666, g_core_proc_entry, &g_pops);
+    ASSERT(ops->plugin_entry != NULL, -ENOMEM);
+
+    ret = 0;
+cleanup:
+    return 0;
+}
+
 static int __init init_entry(void) {
     int ret = -1;
     printk(KERN_INFO "core inited!\n");
-    proc_entry = proc_create_single(PROC_ENTRY_NAME, 0666, NULL, core_proc_show);
-    if (proc_entry == NULL) {
-        printk(KERN_ERR "Failed to create proc entry: %s\n", PROC_ENTRY_NAME);
-        ret = -ENOMEM;
-        goto cleanup;
-    }
-    printk(KERN_INFO "Proc entry created successfully.\n");
+
+    g_core_proc_entry = proc_mkdir(PROC_ENTRY_NAME, NULL);
+    ASSERT(g_core_proc_entry != NULL, -ENOMEM);
+    printk(KERN_INFO "Proc entry %s created successfully.\n", PROC_ENTRY_NAME);
 
     ret = 0;
 
@@ -97,8 +140,14 @@ cleanup:
 }
 
 static void __exit exit_entry(void) {
-    if (proc_entry) {
-        proc_remove(proc_entry);
+    if (g_core_proc_entry) {
+        for (size_t i = 0; i < NUM_PLUGINS; i++) {
+            if (g_plugins[i] && g_plugins[i]->plugin_entry) {
+                proc_remove(g_plugins[i]->plugin_entry);
+                printk(KERN_INFO "Removed proc entry for plugin: %s\n", g_plugins[i]->name);
+            }
+        }
+        proc_remove(g_core_proc_entry);
         printk(KERN_INFO "Proc entry removed successfully.\n");
     } else {
         printk(KERN_WARNING "No proc entry to remove.\n");
