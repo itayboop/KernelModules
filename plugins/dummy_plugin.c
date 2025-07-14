@@ -11,13 +11,13 @@
 plugin_ops_t* ops;
 extern int register_plugin(struct plugin_ops_s* ops);
 
-static int start_my_plugin(void) {
+static int start_plugin(void) {
     printk(KERN_INFO "starting dummy plugin\n");
 
     return 0;
 }
 
-static int stop_my_plugin(void) {
+static int stop_plugin(void) {
     printk(KERN_INFO "stopping dummy plugin\n");
 
     return 0;
@@ -32,8 +32,8 @@ static int __init init_entry(void) {
         return -ENOMEM;
     }
     ops->name = "dummy_plugin";
-    ops->start = start_my_plugin;
-    ops->stop = stop_my_plugin;
+    ops->start = start_plugin;
+    ops->stop = stop_plugin;
 
     register_plugin(ops);
 
