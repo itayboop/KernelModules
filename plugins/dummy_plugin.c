@@ -9,7 +9,7 @@
 #include "../kernel/src/core_module.h"
 #include "../kernel/src/common.h"
 
-plugin_ops_t* ops;
+static plugin_ops_t* g_ops;
 
 static int start_plugin(void) {
     printk(KERN_INFO "starting dummy plugin\n");
@@ -27,23 +27,23 @@ static int __init init_entry(void) {
     int ret = -1;
     printk(KERN_INFO "loading dummy plugin\n");
 
-    ops = kmalloc(sizeof(plugin_ops_t), GFP_KERNEL);
+    g_ops = kmalloc(sizeof(plugin_ops_t), GFP_KERNEL);
 
-    ASSERT_AND_GOTO_LABEL(ops != NULL, -ENOMEM, cleanup);
+    ASSERT_AND_GOTO_LABEL(g_ops != NULL, -ENOMEM, cleanup);
 
-    ops->name = "dummy_plugin";
-    ops->start = start_plugin;
-    ops->stop = stop_plugin;
+    g_ops->name = "dummy_plugin";
+    g_ops->start = start_plugin;
+    g_ops->stop = stop_plugin;
 
-    ASSERT_AND_GOTO_LABEL(register_plugin(ops) != -1, -1 ,cleanup);
+    ASSERT_AND_GOTO_LABEL(register_plugin(g_ops) != -1, -1 ,cleanup);
 
     ret = 0;
 cleanup:
     if (ret != 0) {
         printk(KERN_ERR "Failed to register dummy plugin.\n");
-        if (ops) {
-            kfree(ops);
-            ops = NULL;
+        if (g_ops) {
+            kfree(g_ops);
+            g_ops = NULL;
         }
     }
 
@@ -53,9 +53,9 @@ cleanup:
 static void __exit exit_entry(void) {
     printk(KERN_INFO "unloading dummy plugin\n");
 
-    if (ops) {
-        kfree(ops);
-        ops = NULL;
+    if (g_ops) {
+        kfree(g_ops);
+        g_ops = NULL;
     }
 }
 
