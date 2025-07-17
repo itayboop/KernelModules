@@ -16,8 +16,8 @@
 static struct plugin_ops_s* g_plugins[NUM_PLUGINS] = {};
 static struct proc_dir_entry* g_core_proc_entry = NULL;
 
-static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset)
-static ssize_t proc_write(struct file *file, const char* user_buffer, size_t count, loff_t *ppos)
+static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset);
+static ssize_t proc_write(struct file *file, const char* user_buffer, size_t count, loff_t *ppos);
 
 struct proc_ops g_pops = {
     .proc_read = proc_read,
@@ -48,7 +48,7 @@ static int str_to_int(const char* str) {
 }
 
 static int callback(unsigned int id, const char* data, size_t size) {
-    int ret_val = -EINVAL;
+    int ret = -EINVAL;
     printk(KERN_INFO "Callback called with id: %u, data: %s, size: %zu\n", id, data, size);
     plugin_commands_t command = str_to_int(data);
     switch(command) {
@@ -66,26 +66,26 @@ static int callback(unsigned int id, const char* data, size_t size) {
             printk(KERN_ERR "Unknown command: %c\n", data[0]);
             goto cleanup;
     }
-    ret_val = 0;
+    ret = 0;
 cleanup:
     return -EINVAL;
 }
 
 static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset) {
-    int ret_val = -EFAULT;
+    int ret = -EFAULT;
     printk(KERN_INFO "proc_read called with size: %zu\n", size);
     static const char *msg = "Hello from the kernel!\n";
     size_t len = strlen(msg);
     if (len > 0) {
         ASSERT(copy_to_user(buf, msg, len) == 0, -EFAULT);
 
-        ret_val = len;
+        ret = len;
         goto cleanup;
     }
 
-    ret_val = 0; // EOF
+    ret = 0; // EOF
 cleanup:
-    return ret_val;
+    return ret;
 }
 
 static ssize_t proc_write(struct file *file, const char* user_buffer, size_t count, loff_t *ppos) {
