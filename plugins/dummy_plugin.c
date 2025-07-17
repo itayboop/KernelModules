@@ -28,23 +28,23 @@ static int __init init_entry(void) {
     printk(KERN_INFO "loading dummy plugin\n");
 
     ops = kmalloc(sizeof(plugin_ops_t), GFP_KERNEL);
-    if(!ops) {
-        ASSERT(ops != NULL, cleanup);
-        printk(KERN_ERR "failed to allocate memory for plugin_ops.\n");
-        return -ENOMEM;
-    }
+
+    ASSERT_AND_GOTO_LABEL(ops != NULL, -ENOMEM, cleanup);
+
     ops->name = "dummy_plugin";
     ops->start = start_plugin;
     ops->stop = stop_plugin;
 
-    register_plugin(ops);
+    ASSERT_AND_GOTO_LABEL(register_plugin(ops) != -1, -1 ,cleanup);
 
     ret = 0;
 cleanup:
     if (ret != 0) {
         printk(KERN_ERR "Failed to register dummy plugin.\n");
-        kfree(ops);
-        return ret;
+        if (ops) {
+            kfree(ops);
+            ops = NULL;
+        }
     }
 
     return ret;
@@ -53,7 +53,10 @@ cleanup:
 static void __exit exit_entry(void) {
     printk(KERN_INFO "unloading dummy plugin\n");
 
-    kfree(ops);
+    if (ops) {
+        kfree(ops);
+        ops = NULL;
+    }
 }
 
 module_init(init_entry);
