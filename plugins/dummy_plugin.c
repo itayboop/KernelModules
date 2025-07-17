@@ -9,7 +9,6 @@
 #include "../kernel/src/core_module.h"
 
 plugin_ops_t* ops;
-extern int register_plugin(struct plugin_ops_s* ops);
 
 static int start_plugin(void) {
     printk(KERN_INFO "starting dummy plugin\n");
