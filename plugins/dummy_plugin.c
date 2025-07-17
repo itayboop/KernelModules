@@ -9,6 +9,14 @@
 #include "../kernel/src/core_module.h"
 #include "../kernel/src/common.h"
 
+#define SAFE_FREE(ptr) \
+    do { \
+        if (ptr) { \
+            kfree(ptr); \
+            ptr = NULL; \
+        } \
+    } while (0)
+
 static plugin_ops_t* g_ops;
 
 static int start_plugin(void) {
@@ -41,10 +49,7 @@ static int __init init_entry(void) {
 cleanup:
     if (ret != 0) {
         printk(KERN_ERR "Failed to register dummy plugin.\n");
-        if (g_ops) {
-            kfree(g_ops);
-            g_ops = NULL;
-        }
+        SAFE_FREE(g_ops);
     }
 
     return ret;
@@ -53,10 +58,7 @@ cleanup:
 static void __exit exit_entry(void) {
     printk(KERN_INFO "unloading dummy plugin\n");
 
-    if (g_ops) {
-        kfree(g_ops);
-        g_ops = NULL;
-    }
+    SAFE_FREE(g_ops);
 }
 
 module_init(init_entry);
