@@ -16,6 +16,13 @@
 static struct plugin_ops_s* g_plugins[NUM_PLUGINS] = {};
 static struct proc_dir_entry* g_core_proc_entry = NULL;
 
+static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset)
+static ssize_t proc_write(struct file *file, const char* user_buffer, size_t count, loff_t *ppos)
+
+struct proc_ops g_pops = {
+    .proc_read = proc_read,
+    .proc_write = proc_write,
+};
 
 int start_plugin(const char* name) {
     for (size_t i = 0; i < NUM_PLUGINS; i++) {
@@ -41,6 +48,7 @@ static int str_to_int(const char* str) {
 }
 
 static int callback(unsigned int id, const char* data, size_t size) {
+    int ret_val = -EINVAL;
     printk(KERN_INFO "Callback called with id: %u, data: %s, size: %zu\n", id, data, size);
     plugin_commands_t command = str_to_int(data);
     switch(command) {
@@ -49,38 +57,46 @@ static int callback(unsigned int id, const char* data, size_t size) {
         case PLUGIN_STOP:
             // Implement stop logic if needed
             printk(KERN_INFO "Stopping plugin with id: %u\n", id);
-            return 0; // Return 0 on success
+            break; // Return 0 on success
         case PLUGIN_STATUS:
             // Implement status logic if needed
             printk(KERN_INFO "Status request for plugin with id: %u\n", id);
-            return 0; // Return 0 on success
+            break; // Return 0 on success
         default:
             printk(KERN_ERR "Unknown command: %c\n", data[0]);
-            return -EINVAL; // Return error for unknown command
+            goto cleanup;
     }
-    return 0; // Return 0 on success
+    ret_val = 0;
+cleanup:
+    return -EINVAL;
 }
 
 static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset) {
+    int ret_val = -EFAULT;
     printk(KERN_INFO "proc_read called with size: %zu\n", size);
     static const char *msg = "Hello from the kernel!\n";
     size_t len = strlen(msg);
     if (len > 0) {
-        if (copy_to_user(buf, msg, len)) {
-            return -EFAULT;
-        }
-        return len;
+        ASSERT(copy_to_user(buf, msg, len) == 0, -EFAULT);
+
+        ret_val = len;
+        goto cleanup;
     }
-    return 0; // EOF
+
+    ret_val = 0; // EOF
+cleanup:
+    return ret_val;
 }
 
 static ssize_t proc_write(struct file *file, const char* user_buffer, size_t count, loff_t *ppos) {
     printk(KERN_INFO "proc_write called with count: %zu\n", count);
     unsigned int id = pde_data(file_inode(file));
     ssize_t ret = -1;
-    char* kbuf = kmalloc(BUFFER_SIZE, GFP_KERNEL); 
-
+    char* kbuf = NULL;
+ 
     ASSERT(count < sizeof(kbuf), -EINVAL);
+    kbuf = kmalloc(count, GFP_KERNEL);
+    ASSERT(kbuf != NULL, -ENOMEM);
 
     ASSERT(copy_from_user(kbuf, user_buffer, count) == 0, -EFAULT);
 
@@ -90,22 +106,8 @@ static ssize_t proc_write(struct file *file, const char* user_buffer, size_t cou
     ASSERT(callback(id, kbuf, count) != -1, -EFAULT);
 
     ret = count;
-
 cleanup:
     return ret;
-}
-
-struct proc_ops g_pops = {
-    .proc_read = proc_read,
-    .proc_write = proc_write,
-};
-
-static int core_proc_show(struct seq_file *m, void *v)
-{
-    static const char *msg = "Hello from the kernel!\n";
-	seq_puts(m, msg);
-	seq_putc(m, '\n');
-	return 0;
 }
 
 EXPORT_SYMBOL(register_plugin);
@@ -135,7 +137,6 @@ static int __init init_entry(void) {
     printk(KERN_INFO "Proc entry %s created successfully.\n", PROC_ENTRY_NAME);
 
     ret = 0;
-
 cleanup:
     return ret;
 }
