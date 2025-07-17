@@ -7,6 +7,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include "../kernel/src/core_module.h"
+#include "../kernel/src/common.h"
 
 plugin_ops_t* ops;
 
@@ -23,10 +24,12 @@ static int stop_plugin(void) {
 }
 
 static int __init init_entry(void) {
+    int ret = -1;
     printk(KERN_INFO "loading dummy plugin\n");
 
     ops = kmalloc(sizeof(plugin_ops_t), GFP_KERNEL);
     if(!ops) {
+        ASSERT(ops != NULL, cleanup);
         printk(KERN_ERR "failed to allocate memory for plugin_ops.\n");
         return -ENOMEM;
     }
@@ -36,7 +39,15 @@ static int __init init_entry(void) {
 
     register_plugin(ops);
 
-    return 0;
+    ret = 0;
+cleanup:
+    if (ret != 0) {
+        printk(KERN_ERR "Failed to register dummy plugin.\n");
+        kfree(ops);
+        return ret;
+    }
+
+    return ret;
 }
 
 static void __exit exit_entry(void) {
