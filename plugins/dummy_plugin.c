@@ -17,7 +17,7 @@
         } \
     } while (0)
 
-static plugin_ops_t* g_ops;
+static struct plugin_ops_s* g_ops;
 
 static int start_plugin(void) {
     printk(KERN_INFO "starting dummy plugin\n");
