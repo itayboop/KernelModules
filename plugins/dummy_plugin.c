@@ -29,13 +29,13 @@ static int __init init_entry(void) {
 
     g_ops = kmalloc(sizeof(plugin_ops_t), GFP_KERNEL);
 
-    ASSERT_AND_GOTO_LABEL(g_ops != NULL, -ENOMEM, cleanup);
+    ASSERT(g_ops != NULL, -ENOMEM);
 
     g_ops->name = "dummy_plugin";
     g_ops->start = start_plugin;
     g_ops->stop = stop_plugin;
 
-    ASSERT_AND_GOTO_LABEL(register_plugin(g_ops) != -1, -1 ,cleanup);
+    ASSERT(register_plugin(g_ops) != -1, -1);
 
     ret = 0;
 cleanup:
