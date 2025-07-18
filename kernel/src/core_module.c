@@ -13,7 +13,7 @@
 #define NUM_PLUGINS (10)
 #define PROC_ENTRY_NAME ("core_module")
 
-static struct plugin_ops_s* g_plugins[NUM_PLUGINS] = {};
+static plugin_t* g_plugins[NUM_PLUGINS] = {};
 static struct proc_dir_entry* g_core_proc_entry = NULL;
 
 static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset);
@@ -25,7 +25,7 @@ struct proc_ops g_pops = {
 };
 
 int start_plugin(const char* name) {
-    for (size_t i = 0; i < NUM_PLUGINS; i++) {
+    for (size_t i = 0; i < ARRAY_SIZE(g_plugins); i++) {
         if (g_plugins[i] && strcmp(g_plugins[i]->name, name) == 0) {
             printk(KERN_INFO "Starting plugin: %s\n", name);
             return g_plugins[i]->start();
@@ -111,21 +111,57 @@ cleanup:
 }
 
 EXPORT_SYMBOL(register_plugin);
-int register_plugin(struct plugin_ops_s* ops) {
+int register_plugin(plugin_t* plugin) {
     int ret = -1;
     static size_t current_plugin_count = 0;
-    ASSERT(ops != NULL, -EINVAL);
+    ASSERT(plugin != NULL, -EINVAL);
 
-    g_plugins[current_plugin_count++] = ops;
-    ASSERT(current_plugin_count <= NUM_PLUGINS, -ENOMEM);
-    printk(KERN_INFO "plugin_register called with ops: %p\n", ops);
+    g_plugins[current_plugin_count++] = plugin;
+    ASSERT(current_plugin_count <= ARRAY_SIZE(g_plugins), -ENOMEM);
+    printk(KERN_INFO "plugin_register called with plugin: %p\n", plugin);
 
-    ops->plugin_entry = proc_create(ops->name, 0666, g_core_proc_entry, &g_pops);
-    ASSERT(ops->plugin_entry != NULL, -ENOMEM);
+    plugin->plugin_entry = proc_create(plugin->name, 0666, g_core_proc_entry, &g_pops);
+    ASSERT(plugin->plugin_entry != NULL, -ENOMEM);
 
+    plugin->state = PLUGIN_STATE_INITIALIZED;
     ret = 0;
 cleanup:
-    return 0;
+    if (ret < 0) {
+        if (plugin) {
+            plugin->state = PLUGIN_STATE_ERROR;
+            printk(KERN_ERR "Failed to register plugin: %s\n", plugin->name);
+        }
+    }
+    return ret;
+}
+
+EXPORT_SYMBOL(unregister_plugin);
+int unregister_plugin(plugin_t* plugin) {
+    int ret = -1;
+    ASSERT(plugin != NULL, -EINVAL);
+    printk(KERN_INFO "plugin_unregister called with plugin: %p\n", plugin);
+    for (size_t i = 0; i < ARRAY_SIZE(g_plugins); i++) {
+        if (g_plugins[i] == plugin) {
+            g_plugins[i] = NULL;
+            if (plugin->plugin_entry) {
+                proc_remove(plugin->plugin_entry);
+                plugin->plugin_entry = NULL;
+                printk(KERN_INFO "Removed proc entry for plugin: %s\n", plugin->name);
+            }
+            break;
+        }
+    }
+
+    plugin->state = PLUGIN_STATE_DESTROYED;
+    ret = 0;
+cleanup:
+    if (ret < 0) {
+        if (plugin) {
+            plugin->state = PLUGIN_STATE_ERROR;
+            printk(KERN_ERR "Failed to unregister plugin: %s\n", plugin->name);
+        }
+    }
+    return ret;
 }
 
 static int __init init_entry(void) {
@@ -143,7 +179,7 @@ cleanup:
 
 static void __exit exit_entry(void) {
     if (g_core_proc_entry) {
-        for (size_t i = 0; i < NUM_PLUGINS; i++) {
+        for (size_t i = 0; i < ARRAY_SIZE(g_plugins); i++) {
             if (g_plugins[i] && g_plugins[i]->plugin_entry) {
                 proc_remove(g_plugins[i]->plugin_entry);
                 printk(KERN_INFO "Removed proc entry for plugin: %s\n", g_plugins[i]->name);

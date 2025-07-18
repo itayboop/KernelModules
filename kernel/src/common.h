@@ -1,5 +1,7 @@
 #pragma once
 
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 #define ASSERT_AND_GOTO_LABEL(condition, error, label) \
     do { \
         if (!(condition)) { \
