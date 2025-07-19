@@ -31,6 +31,12 @@ static int stop_plugin(void) {
     return 0;
 }
 
+static int cleanup(void) {
+    printk(KERN_INFO "cleaning up dummy plugin\n");
+
+    return 0;
+}
+
 static int __init init_entry(void) {
     int ret = -1;
     printk(KERN_INFO "loading dummy plugin\n");
@@ -42,6 +48,7 @@ static int __init init_entry(void) {
     g_plugin->name = "dummy_plugin";
     g_plugin->start = start_plugin;
     g_plugin->stop = stop_plugin;
+    g_plugin->cleanup = cleanup;
 
     ASSERT(register_plugin(g_plugin) != -1, -1);
 

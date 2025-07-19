@@ -160,6 +160,9 @@ int unregister_plugin(plugin_t* plugin) {
     printk(KERN_INFO "plugin_unregister called with plugin: %p\n", plugin);
     list_for_each_entry(item, &g_plugin_list, list) {
         if (item->plugin == plugin) {
+            item->plugin->cleanup();
+            printk(KERN_INFO "Cleaning up plugin: %s\n", item->plugin->name);
+
             proc_remove(item->plugin->plugin_entry);
             item->plugin->plugin_entry = NULL;
             printk(KERN_INFO "Removed proc entry for plugin: %s\n", item->plugin->name);
@@ -199,6 +202,8 @@ static void __exit exit_entry(void) {
     if (g_core_proc_entry) {
         list_for_each_entry(item, &g_plugin_list, list) {
             if (item->plugin) {
+                printk(KERN_INFO "Cleaning up plugin: %s\n", item->plugin->name);
+                item->plugin->cleanup();
                 proc_remove(item->plugin->plugin_entry);
                 kfree(item->plugin);
             }

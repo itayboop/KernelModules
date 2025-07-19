@@ -16,6 +16,7 @@ typedef struct plugin_s {
     const char* name;
     int (*start)(void);
     int (*stop)(void);
+    int (*cleanup)(void);
     struct proc_dir_entry* plugin_entry;
 } plugin_t;
 
