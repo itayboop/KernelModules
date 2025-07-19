@@ -1,7 +1,7 @@
 # Kernel build dir
-KDIR := /lib/modules/6.14.0-24-generic/build
-
-# PWD — current working dir
+KDIR ?= /lib/modules/6.14.0-24-generic/build
+BUILD_DIR ?= build
+TARGET := $(SRC_DIR)/$(MODULE_NAME).o
 PWD := $(shell pwd)
 
 # REQUIRED: MODULE_NAME and SRC_DIR must be set by including Makefile!
@@ -17,10 +17,6 @@ endif
 ifdef EXTRA_SYMBOLS
   EXTRA_KERNEL_SYM := KBUILD_EXTRA_SYMBOLS=$(EXTRA_SYMBOLS)
 endif
-
-BUILD_DIR := build
-
-TARGET := $(SRC_DIR)/$(MODULE_NAME).o
 
 obj-m := $(TARGET)
 
