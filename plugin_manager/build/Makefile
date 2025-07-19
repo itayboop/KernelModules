@@ -1,3 +1,4 @@
 obj-m := core_module.o
-SRC_DIR := .
-ccflags-y += -I${SRC_DIR}
+INCLUDE := 
+SRC_DIR := src/
+ccflags-y += -I${SRC_DIR} ${INCLUDE}

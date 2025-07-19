@@ -1,6 +1,6 @@
 PWD := $(shell pwd)
 MODULE_NAME := core_module
-ROOT_DIR ?= ~/src/KernelModules
-SRC_DIR := plugin_manager/src
+ROOT_DIR ?= ~/dev/KernelModules
+SRC_DIR := src/
 
-include $(ROOT_DIR)/common/ko_makefile_template.mk
+include $(ROOT_DIR)/makefiles/build_makefile.mk
