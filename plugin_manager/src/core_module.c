@@ -88,7 +88,7 @@ static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offs
     ASSERT(offset != NULL, -EINVAL);
 
     printk(KERN_INFO "proc_read called with size: %zu\n", size);
-    static const char *msg = "Hello from the kernel!\n";
+    static const char *msg = "Hello from the plugin_manager!\n";
     size_t len = strlen(msg);
     if (len > 0) {
         ASSERT(copy_to_user(buf, msg, len) == 0, -EFAULT);
