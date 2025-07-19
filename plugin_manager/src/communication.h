@@ -1,7 +1,7 @@
 #include <types.h>
 
 #pragma pack(1)
-typedef struct {
+typedef struct command_pkt_s {
 	unsigned short magic;
 	unsigned char type;
 	uint32_t len;
