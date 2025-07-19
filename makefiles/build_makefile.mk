@@ -1,5 +1,5 @@
-		# Kernel build dir
-KDIR ?= /lib/modules/$(shell uname -r)+/build
+# Kernel build dir
+KDIR ?= /lib/modules/6.14.0-24-generic//build
 
 # PWD — current working dir
 PWD := $(shell pwd)
@@ -19,7 +19,6 @@ ifdef EXTRA_SYMBOLS
 endif
 
 BUILD_DIR ?= build
-INCLUDE := $(ROOT_DIR)/
 
 TARGET := $(SRC_DIR)/$(MODULE_NAME).o
 
@@ -29,8 +28,10 @@ $(info ${SRC_DIR})
 all:
 	mkdir -p $(BUILD_DIR)
 	echo "obj-m := $(MODULE_NAME).o" > $(BUILD_DIR)/Makefile
-	echo "SRC_DIR := ." >> $(BUILD_DIR)/Makefile
-	echo 'ccflags-y += -I$${SRC_DIR}' >> $(BUILD_DIR)/Makefile
+	echo "INCLUDE := $(INCLUDE)" >> $(BUILD_DIR)/Makefile
+	echo "SRC_DIR := $(SRC_DIR)" >> $(BUILD_DIR)/Makefile
+	echo 'ccflags-y += -I$${SRC_DIR} $${INCLUDE}' >> $(BUILD_DIR)/Makefile
+	cp $(INCLUDE) -r $(BUILD_DIR)/ 2>/dev/null || true
 	cp $(SRC_DIR)/*.c $(BUILD_DIR)/ 2>/dev/null || true
 	cp $(SRC_DIR)/*.h $(BUILD_DIR)/ 2>/dev/null || true
 

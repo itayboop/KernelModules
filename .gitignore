@@ -8,6 +8,7 @@
 *.obj
 *.elf
 
+**/build/*
 *build/*
 usermode/build/*
 usermode/cmake*/*
