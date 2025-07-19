@@ -14,9 +14,6 @@
 #define NUM_PLUGINS (10)
 #define PROC_ENTRY_NAME ("core_module")
 
-#include <linux/list.h>
-
-
 struct plugin_list_item {
     plugin_t *plugin;
     struct list_head list;
@@ -85,6 +82,11 @@ cleanup:
 
 static ssize_t proc_read(struct file* File, char* buf, size_t size, loff_t* offset) {
     int ret = -EFAULT;
+
+    ASSERT(File != NULL, -EINVAL);
+    ASSERT(buf != NULL, -EINVAL);
+    ASSERT(offset != NULL, -EINVAL);
+
     printk(KERN_INFO "proc_read called with size: %zu\n", size);
     static const char *msg = "Hello from the kernel!\n";
     size_t len = strlen(msg);
@@ -106,6 +108,10 @@ static ssize_t proc_write(struct file *file, const char* user_buffer, size_t cou
     ssize_t ret = -1;
     char* kbuf = NULL;
  
+    ASSERT(file != NULL, -EINVAL);
+    ASSERT(user_buffer != NULL, -EINVAL);
+    ASSERT(ppos != NULL, -EINVAL);
+
     ASSERT(count < sizeof(kbuf), -EINVAL);
     kbuf = kmalloc(count, GFP_KERNEL);
     ASSERT(kbuf != NULL, -ENOMEM);
