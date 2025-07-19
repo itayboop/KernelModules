@@ -2,7 +2,7 @@ obj-m += dummy_plugin2.o
 
 PWD := $(CURDIR)
 MODULE_NAME := dummy_plugin2
-ROOT_DIR := $()(PWD)/../..
+ROOT_DIR := $(realpath $(PWD)/../..)
 SRC_DIR := $(PWD)
 EXTRA_SYMBOLS := $(ROOT_DIR)/plugin_manager/build/Module.symvers
 INCLUDE := $(ROOT_DIR)/plugin_manager

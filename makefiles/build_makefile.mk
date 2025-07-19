@@ -24,7 +24,6 @@ TARGET := $(SRC_DIR)/$(MODULE_NAME).o
 
 obj-m := $(TARGET)
 
-$(info ${SRC_DIR})
 all:
 	mkdir -p $(BUILD_DIR)
 	echo "obj-m := $(MODULE_NAME).o" > $(BUILD_DIR)/Makefile
