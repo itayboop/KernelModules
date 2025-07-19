@@ -3,11 +3,11 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/string.h>
-
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include "../kernel/src/core_module.h"
-#include "../kernel/src/common.h"
+
+#include "plugin_manager/src/core_module.h"
+#include "plugin_manager/src/common.h"
 
 #define SAFE_FREE(ptr) \
     do { \

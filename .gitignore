@@ -10,6 +10,7 @@
 
 *build/*
 usermode/build/*
+usermode/cmake*/*
 
 # Linker output
 *.ilk
