@@ -17,4 +17,3 @@ function clean_kernel() {
     fi
     echo "Kernel module cleaned successfully."
 }
-

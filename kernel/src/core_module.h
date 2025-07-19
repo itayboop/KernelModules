@@ -25,7 +25,7 @@ typedef enum plugin_commands_e {
     PLUGIN_STATUS,
 } plugin_commands_t;
 
-int register_plugin(struct plugin_s* ops);
-int unregister_plugin(struct plugin_s* ops);
+int register_plugin(plugin_t* ops);
+int unregister_plugin(plugin_t* ops);
 
 #endif // __CORE_MODULE_H__
