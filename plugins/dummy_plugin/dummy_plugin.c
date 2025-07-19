@@ -74,5 +74,5 @@ module_init(init_entry);
 module_exit(exit_entry);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("ReiN & Hadad");
+MODULE_AUTHOR("ReiN & Hadad & Regev");
 MODULE_DESCRIPTION("Dummy plugin");
