@@ -14,10 +14,10 @@
 #define NUM_PLUGINS (10)
 #define PROC_ENTRY_NAME ("core_module")
 
-struct plugin_list_item {
+typedef struct plugin_list_item_s {
     plugin_t *plugin;
     struct list_head list;
-};
+} plugin_list_item_t;
 
 static LIST_HEAD(g_plugin_list);
 
@@ -32,7 +32,7 @@ struct proc_ops g_pops = {
 };
 
 int start_plugin(const char* name) {
-    struct plugin_list_item *item = NULL;
+    plugin_list_item_t *item = NULL;
 
     list_for_each_entry(item, &g_plugin_list, list) {
         if (item->plugin && strcmp(item->plugin->name, name) == 0) {
@@ -132,7 +132,7 @@ EXPORT_SYMBOL(register_plugin);
 int register_plugin(plugin_t* plugin) {
     int ret = -1;
     static size_t current_plugin_count = 0;
-    struct plugin_list_item *item = NULL;
+    plugin_list_item_t *item = NULL;
     ASSERT(plugin != NULL, -EINVAL);
 
     item = kmalloc(sizeof(*item), GFP_KERNEL);
@@ -161,7 +161,7 @@ cleanup:
 EXPORT_SYMBOL(unregister_plugin);
 int unregister_plugin(plugin_t* plugin) {
     int ret = -1;
-    struct plugin_list_item *item = NULL;
+    plugin_list_item_t *item = NULL;
     ASSERT(plugin != NULL, -EINVAL);
     printk(KERN_INFO "plugin_unregister called with plugin: %p\n", plugin);
     list_for_each_entry(item, &g_plugin_list, list) {
@@ -204,7 +204,7 @@ cleanup:
 }
 
 static void __exit exit_entry(void) {
-    struct plugin_list_item *item = NULL;
+    plugin_list_item_t *item = NULL;
     if (g_core_proc_entry) {
         list_for_each_entry(item, &g_plugin_list, list) {
             if (item->plugin) {
