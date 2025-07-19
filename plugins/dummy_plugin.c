@@ -17,7 +17,7 @@
         } \
     } while (0)
 
-static struct plugin_ops_s* g_ops;
+static plugin_t* g_plugin = NULL;
 
 static int start_plugin(void) {
     printk(KERN_INFO "starting dummy plugin\n");
@@ -31,25 +31,32 @@ static int stop_plugin(void) {
     return 0;
 }
 
+static int cleanup(void) {
+    printk(KERN_INFO "cleaning up dummy plugin\n");
+
+    return 0;
+}
+
 static int __init init_entry(void) {
     int ret = -1;
     printk(KERN_INFO "loading dummy plugin\n");
 
-    g_ops = kmalloc(sizeof(plugin_ops_t), GFP_KERNEL);
+    g_plugin = kmalloc(sizeof(plugin_t), GFP_KERNEL);
 
-    ASSERT(g_ops != NULL, -ENOMEM);
+    ASSERT(g_plugin != NULL, -ENOMEM);
 
-    g_ops->name = "dummy_plugin";
-    g_ops->start = start_plugin;
-    g_ops->stop = stop_plugin;
+    g_plugin->name = "dummy_plugin";
+    g_plugin->start = start_plugin;
+    g_plugin->stop = stop_plugin;
+    g_plugin->cleanup = cleanup;
 
-    ASSERT(register_plugin(g_ops) != -1, -1);
+    ASSERT(register_plugin(g_plugin) != -1, -1);
 
     ret = 0;
 cleanup:
     if (ret != 0) {
         printk(KERN_ERR "Failed to register dummy plugin.\n");
-        SAFE_FREE(g_ops);
+        SAFE_FREE(g_plugin);
     }
 
     return ret;
@@ -58,7 +65,9 @@ cleanup:
 static void __exit exit_entry(void) {
     printk(KERN_INFO "unloading dummy plugin\n");
 
-    SAFE_FREE(g_ops);
+    unregister_plugin(g_plugin);
+    printk(KERN_INFO "Dummy plugin unregistered successfully.\n");
+    SAFE_FREE(g_plugin);
 }
 
 module_init(init_entry);
